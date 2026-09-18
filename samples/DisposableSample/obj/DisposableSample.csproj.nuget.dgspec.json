@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "c:\\Users\\Bruger\\coding\\Leander.Disposable\\samples\\DisposableSample\\DisposableSample.csproj": {}
+    "C:\\Users\\Bruger\\coding\\Leander.Disposable\\samples\\DisposableSample\\DisposableSample.csproj": {}
   },
   "projects": {
-    "c:\\Users\\Bruger\\coding\\Leander.Disposable\\samples\\DisposableSample\\DisposableSample.csproj": {
+    "C:\\Users\\Bruger\\coding\\Leander.Disposable\\samples\\DisposableSample\\DisposableSample.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "c:\\Users\\Bruger\\coding\\Leander.Disposable\\samples\\DisposableSample\\DisposableSample.csproj",
+        "projectUniqueName": "C:\\Users\\Bruger\\coding\\Leander.Disposable\\samples\\DisposableSample\\DisposableSample.csproj",
         "projectName": "DisposableSample",
-        "projectPath": "c:\\Users\\Bruger\\coding\\Leander.Disposable\\samples\\DisposableSample\\DisposableSample.csproj",
+        "projectPath": "C:\\Users\\Bruger\\coding\\Leander.Disposable\\samples\\DisposableSample\\DisposableSample.csproj",
         "packagesPath": "C:\\Users\\Bruger\\.nuget\\packages\\",
-        "outputPath": "c:\\Users\\Bruger\\coding\\Leander.Disposable\\samples\\DisposableSample\\obj\\",
+        "outputPath": "C:\\Users\\Bruger\\coding\\Leander.Disposable\\samples\\DisposableSample\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
