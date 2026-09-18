@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Leander.Disposable")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5cf9d8a9609a1895faa17a4c7704027ce8f4b120")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fda263f78665c80fbcbd4c4cb6f1b929bae90e83")]
 [assembly: System.Reflection.AssemblyProductAttribute("Leander.Disposable")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Leander.Disposable")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

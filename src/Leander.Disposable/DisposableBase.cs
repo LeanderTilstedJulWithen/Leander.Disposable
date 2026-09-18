@@ -2,7 +2,7 @@ namespace Leander.Disposable;
 
 internal abstract class DisposableBase : IDisposableState
 {
-    internal bool _isDisposed;
+    private bool _isDisposed;
 
     internal abstract void DisposeCore();
 
