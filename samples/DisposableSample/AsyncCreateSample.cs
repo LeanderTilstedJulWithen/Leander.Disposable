@@ -14,6 +14,7 @@ public static class AsyncCreateSample
     }
     public static async Task RunAsync()
     {
+        Console.WriteLine();
         Console.WriteLine("============Async Create===============");
         var memoryStream = new MemoryStream();
         
