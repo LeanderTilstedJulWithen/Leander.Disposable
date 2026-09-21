@@ -10,7 +10,6 @@ public static class AsyncTrackerSample
         Console.WriteLine($"============Async Tracker ({order})===============");
         await using var tracker = AsyncDisposable.CreateTracker(order);
         var sw = new Stopwatch();
-        
 
         tracker.Track(AsynchronousCleanup("Resource1", TimeSpan.FromSeconds(0.3), sw));
         tracker.Track(SynchronousCleanup("Resource2", TimeSpan.FromSeconds(0.2), sw));
