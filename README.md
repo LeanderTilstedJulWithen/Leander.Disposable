@@ -17,7 +17,7 @@ Three factory methods cover the most common disposal patterns:
 
 ---
 
-## Disposable.Create — subscription token
+## Disposable.Create
 
 Wraps any cleanup action as a disposable. A natural fit for event subscriptions, where the returned token unsubscribes the handler when disposed.
 
@@ -52,7 +52,7 @@ Console.WriteLine(subscription.IsDisposed); // → True
 
 ---
 
-## Disposable.Wrap — connection guard
+## Disposable.Wrap
 
 Adds `IsDisposed` tracking to any existing `IDisposable`. Useful when a component holds a reference to a resource it did not create and needs to check availability without controlling disposal.
 
@@ -81,7 +81,7 @@ Console.WriteLine(guard.IsConnected); // → False
 
 ---
 
-## Disposable.CreateTracker — scoped factory
+## Disposable.CreateTracker
 
 Collects resources and disposes them all in reverse acquisition order (LIFO) when the tracker is disposed. Well suited for factories with a bounded lifetime: the factory hands out resources to callers, and disposing the factory closes everything it opened.
 
