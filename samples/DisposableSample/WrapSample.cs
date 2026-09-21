@@ -5,12 +5,9 @@ using Leander.Disposable;
 // IsDisposed so callers can check availability without controlling disposal.
 internal static class WrapSample
 {
-    private sealed class ConnectionGuard
+    private sealed class ConnectionGuard(IDisposable connection)
     {
-        private readonly IDisposableState _handle;
-
-        public ConnectionGuard(IDisposable connection) =>
-            _handle = Disposable.Wrap(connection);
+        private readonly IDisposableState _handle = Disposable.Wrap(connection);
 
         public bool IsConnected => !_handle.IsDisposed;
 
