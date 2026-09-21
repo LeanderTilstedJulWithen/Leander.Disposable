@@ -112,3 +112,34 @@ var c = factory.OpenConnection("C");
 ```
 
 If any tracked `Dispose()` call throws, disposal continues through the remaining resources. All exceptions are collected and rethrown together as an `AggregateException`.
+
+
+## AsyncDisposable.CreateTracker
+
+The tracker utility is also available in an async version. Here is an implementation of a very generic factory using ActivatorUtilities. If you for some reason decide to use ActivatorUtilities to create objects, then you are responsible for cleaning up your mess. This is one way to this.
+
+```csharp
+public sealed class GenericFactory(IServiceProvider serviceProvider) : IAsyncDisposable
+{
+    private readonly _tracker = AsyncDisposable.CreateTracker();
+    private readonly _serviceProvider = serviceProvider;
+
+    public T CreateInstance<T>(params object[] args)
+    {
+        ObjectDisposedException.ThrowIf(_tracker.IsDisposed, typeof(GenericFactory));
+        var result = ActivatorUtilities.CreateInstance<T>(_serviceProvider, args);
+        if (result is IAsyncDisposable asyncDisposable)
+        {
+            _tracker.Track(asyncDisposable);
+        }
+        else if (result is IDisposable disposable)
+        {
+            _tracker.Track(disposable);
+        }
+
+        return result;
+    }
+
+    public ValueTask DisposeAsync() => _tracker.DisposeAsync();
+}
+```
