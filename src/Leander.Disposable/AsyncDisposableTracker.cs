@@ -1,25 +1,23 @@
 namespace Leander.Disposable;
 
-internal sealed class AsyncDisposableTracker : AsyncDisposableBase, IAsyncDisposableTracker
+internal sealed class AsyncDisposableTracker(DisposalOrder order) : AsyncDisposableBase, IAsyncDisposableTracker
 {
     private readonly Stack<IAsyncDisposable> _disposables = [];
+    private readonly DisposalOrder _order = order;
 
     internal override async ValueTask DisposeAsyncCore()
     {
-        List<Exception>? exceptions = null;
-        while (_disposables.TryPop(out var disposable))
+        switch (_order)
         {
-            try
-            {
-                await disposable.DisposeAsync();
-            }
-            catch (Exception ex)
-            {
-                (exceptions ??= []).Add(ex);
-            }
+            case DisposalOrder.Lifo:
+                await DisposeLifoOrder();
+                break;
+            case DisposalOrder.Parallel:
+                await DisposeParallel();
+                break;
+            default:
+                throw new InvalidOperationException($"Unknown disposal order: {_order}");
         }
-        if (exceptions is not null)
-            throw new AggregateException(exceptions);
     }
 
     private async ValueTask DisposeLifoOrder()
