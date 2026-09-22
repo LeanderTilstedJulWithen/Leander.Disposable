@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/samples/">
+    <Project Path="samples/DisposableSample/DisposableSample.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Leander.Disposable/Leander.Disposable.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Leander.Disposable.Tests/Leander.Disposable.Tests.csproj" />
+  </Folder>
+</Solution>
