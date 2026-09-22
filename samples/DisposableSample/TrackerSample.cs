@@ -1,5 +1,7 @@
 using Leander.Disposable;
 
+namespace DisposableSample;
+
 // Demonstrates Disposable.CreateTracker via a scoped factory.
 // The factory hands out connections to callers but retains ownership.
 // Disposing the factory disposes every connection it has created.
@@ -22,7 +24,7 @@ internal static class TrackerSample
 
     public static void Run()
     {
-        Console.WriteLine("\n=== Disposable.CreateTracker — scoped factory ===");
+        Console.WriteLine("=== Disposable.CreateTracker — scoped factory ===");
 
         using var factory = new ConnectionFactory();
 
@@ -37,4 +39,11 @@ internal static class TrackerSample
         Console.WriteLine("  Leaving factory scope...");
         // All connections disposed here in reverse order: C, B, A.
     }
+
+    // Output:
+    // === Disposable.CreateTracker — scoped factory ===
+    //   Leaving factory scope...
+    //   Connection 'C' closed.
+    //   Connection 'B' closed.
+    //   Connection 'A' closed.
 }

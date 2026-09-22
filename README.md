@@ -2,148 +2,85 @@
 
 A small .NET utility library for composing and managing disposable resources without writing boilerplate classes.
 
+## Why
+
+Hand-rolling a disposable class means tracking a disposed flag, guarding against double-dispose, and — once you own more than one resource — cleaning them up in the right order and deciding what happens if one of them throws.
+
+```csharp
+public sealed class ReportScheduler : IDisposable
+{
+    private readonly FileSystemWatcher _watcher;
+    private readonly Timer _timer;
+    private bool _disposed;
+
+    public ReportScheduler(string path)
+    {
+        _watcher = new FileSystemWatcher(path);
+        _timer = new Timer(_ => GenerateReport(), null, TimeSpan.Zero, TimeSpan.FromMinutes(5));
+    }
+
+    private void GenerateReport() { /* ... */ }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        var exceptions = new List<Exception>();
+        try { _timer.Dispose(); } catch (Exception ex) { exceptions.Add(ex); }
+        try { _watcher.Dispose(); } catch (Exception ex) { exceptions.Add(ex); }
+        if (exceptions.Count > 0) throw new AggregateException(exceptions);
+    }
+}
+```
+
+`Disposable.CreateTracker()` covers the disposed flag, ordering, and exception aggregation, leaving just the resources themselves:
+
+```csharp
+public sealed class ReportScheduler : IDisposable
+{
+    private readonly IDisposableTracker _tracker = Disposable.CreateTracker();
+    private readonly Timer _timer;
+    private readonlt FileSystemWatcher _watcher;
+
+    public ReportScheduler(string path)
+    {
+        _watcher = new FileSystemWatcher(path);
+        _tracker.Track(_watcher);
+        _timer = new Timer(_ => GenerateReport(), null, TimeSpan.Zero, TimeSpan.FromMinutes(5));
+        _tracker.Track(_timer);
+    }
+
+    private void GenerateReport() { /* ... */ }
+
+    public void Dispose() => _tracker.Dispose();
+}
+```
+
 ## Overview
 
-Three factory methods cover the most common disposal patterns:
+Six factory methods cover the common disposal patterns, in both synchronous and asynchronous flavors:
 
 | Method | Returns | Use when |
 |---|---|---|
 | `Disposable.Create(action)` | `IDisposableState` | You have a cleanup callback and want a disposable handle |
 | `Disposable.Wrap(disposable)` | `IDisposableState` | You have an existing `IDisposable` and need to query its disposal state |
 | `Disposable.CreateTracker()` | `IDisposableTracker` | A scope or factory owns multiple resources and must clean them all up together |
+| `AsyncDisposable.Create(action)` | `IAsyncDisposableState` | Same as `Disposable.Create`, but cleanup needs to `await` something |
+| `AsyncDisposable.Wrap(disposable)` | `IAsyncDisposableState` | Same as `Disposable.Wrap`, for an existing `IAsyncDisposable` |
+| `AsyncDisposable.CreateTracker(order?)` | `IAsyncDisposableTracker` | Same as `Disposable.CreateTracker`, with a choice of LIFO or parallel disposal order |
 
-`IDisposableState` extends `IDisposable` with a single `bool IsDisposed` property.  
-`IDisposableTracker` extends `IDisposableState` with `Track(IDisposable)`.
+`IDisposableState`/`IAsyncDisposableState` extend `IDisposable`/`IAsyncDisposable` with a single `bool IsDisposed` property.  
+`IDisposableTracker`/`IAsyncDisposableTracker` extend those with `Track(...)`.
+
+### Idempotent disposal
+
+`Dispose()`/`DisposeAsync()` on every type in this library can be called more than once safely — the first call runs your cleanup, every call after that is a no-op. You never need to guard your own `Dispose` method with a `_disposed` check before delegating to a tracker or a wrapped disposable: call it from as many code paths as you need (a `using` block *and* an explicit early-return path, say) without risking double cleanup. `IsDisposed` reflects whether the first call has already happened.
 
 ### Thread safety
 
-None of the types in this library are thread-safe. `Dispose`/`DisposeAsync` are safe to call more than once from a *single* thread (idempotent — later calls are no-ops), but calling `Dispose`, `DisposeAsync`, or `Track` concurrently from multiple threads on the same instance is not supported and may corrupt internal state or trigger a resource being disposed more than once. If you need a tracker shared across threads, synchronize access to it yourself.
+None of the types in this library are thread-safe. Idempotency holds when `Dispose`/`DisposeAsync` is called more than once from a *single* thread, but calling `Dispose`, `DisposeAsync`, or `Track` concurrently from multiple threads on the same instance is not supported and may corrupt internal state or cause a resource to be disposed more than once. If you need a tracker shared across threads, synchronize access to it yourself.
 
----
+## Samples
 
-## Disposable.Create
-
-Wraps any cleanup action as a disposable. A natural fit for event subscriptions, where the returned token unsubscribes the handler when disposed.
-
-```csharp
-private sealed class MessageBus
-{
-    private event Action<string>? _subscribers;
-
-    public IDisposableState Subscribe(Action<string> handler)
-    {
-        _subscribers += handler;
-        return Disposable.Create(() => _subscribers -= handler);
-    }
-
-    public void Publish(string message) => _subscribers?.Invoke(message);
-}
-```
-
-```csharp
-var bus = new MessageBus();
-
-using var subscription = bus.Subscribe(msg => Console.WriteLine($"Received: {msg}"));
-
-bus.Publish("Hello");                    // → Received: Hello
-Console.WriteLine(subscription.IsDisposed); // → False
-
-subscription.Dispose();
-
-bus.Publish("World");                    // (no output — handler was removed)
-Console.WriteLine(subscription.IsDisposed); // → True
-```
-
----
-
-## Disposable.Wrap
-
-Adds `IsDisposed` tracking to any existing `IDisposable`. Useful when a component holds a reference to a resource it did not create and needs to check availability without controlling disposal.
-
-```csharp
-private sealed class ConnectionGuard
-{
-    private readonly IDisposableState _handle;
-
-    public ConnectionGuard(IDisposable connection) =>
-        _handle = Disposable.Wrap(connection);
-
-    public bool IsConnected => !_handle.IsDisposed;
-
-    public void Close() => _handle.Dispose();
-}
-```
-
-```csharp
-var connection = new MemoryStream();
-var guard = new ConnectionGuard(connection);
-
-Console.WriteLine(guard.IsConnected); // → True
-guard.Close();
-Console.WriteLine(guard.IsConnected); // → False
-```
-
----
-
-## Disposable.CreateTracker
-
-Collects resources and disposes them all in reverse acquisition order (LIFO) when the tracker is disposed. Well suited for factories with a bounded lifetime: the factory hands out resources to callers, and disposing the factory closes everything it opened.
-
-```csharp
-private sealed class ConnectionFactory : IDisposable
-{
-    private readonly IDisposableTracker _tracker = Disposable.CreateTracker();
-
-    public MemoryStream OpenConnection(string name)
-    {
-        var connection = new MemoryStream();
-        _tracker.Track(connection);
-        return connection;
-    }
-
-    public void Dispose() => _tracker.Dispose();
-}
-```
-
-```csharp
-using var factory = new ConnectionFactory();
-
-var a = factory.OpenConnection("A");
-var b = factory.OpenConnection("B");
-var c = factory.OpenConnection("C");
-
-// On dispose: C closed, then B, then A.
-```
-
-If any tracked `Dispose()` call throws, disposal continues through the remaining resources. All exceptions are collected and rethrown together as an `AggregateException`.
-
-
-## AsyncDisposable.CreateTracker
-
-The tracker utility is also available in an async version. Here is an implementation of a very generic factory using ActivatorUtilities. If you for some reason decide to use ActivatorUtilities to create objects, then you are responsible for cleaning up your mess. This is one way to do this.
-
-```csharp
-public sealed class GenericFactory(IServiceProvider serviceProvider) : IAsyncDisposable
-{
-    private readonly IAsyncDisposableTracker _tracker = AsyncDisposable.CreateTracker();
-    private readonly IServiceProvider _serviceProvider = serviceProvider;
-
-    public T CreateInstance<T>(params object[] args)
-    {
-        ObjectDisposedException.ThrowIf(_tracker.IsDisposed, typeof(GenericFactory));
-        var result = ActivatorUtilities.CreateInstance<T>(_serviceProvider, args);
-        if (result is IAsyncDisposable asyncDisposable)
-        {
-            _tracker.Track(asyncDisposable);
-        }
-        else if (result is IDisposable disposable)
-        {
-            _tracker.Track(disposable);
-        }
-
-        return result;
-    }
-
-    public ValueTask DisposeAsync() => _tracker.DisposeAsync();
-}
-```
+[`samples/DisposableSample`](samples/DisposableSample) is a runnable console project demonstrating all six factory methods — including LIFO vs. parallel async disposal ordering, and a generic factory built on `ActivatorUtilities`.

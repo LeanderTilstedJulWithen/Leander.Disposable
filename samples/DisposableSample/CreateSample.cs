@@ -1,5 +1,7 @@
 using Leander.Disposable;
 
+namespace DisposableSample;
+
 // Demonstrates Disposable.Create via an event subscription pattern.
 // Subscribe returns a disposal token — disposing it unsubscribes the handler.
 internal static class CreateSample
@@ -33,4 +35,10 @@ internal static class CreateSample
         bus.Publish("World");  // not received — handler was removed on dispose
         Console.WriteLine($"  Active: {!subscription.IsDisposed}");
     }
+
+    // Output:
+    // === Disposable.Create — subscription token ===
+    //   Received: Hello
+    //   Active: True
+    //   Active: False
 }
