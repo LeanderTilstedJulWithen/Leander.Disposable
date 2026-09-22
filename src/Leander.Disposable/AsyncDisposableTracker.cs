@@ -61,9 +61,13 @@ internal sealed class AsyncDisposableTracker(DisposalOrder order) : AsyncDisposa
         {
             await Task.WhenAll(tasks);
         }
-        catch (Exception ex)
+        catch
         {
-            (exceptions ??= []).Add(ex);
+            foreach (var task in tasks)
+            {
+                if (task.IsFaulted)
+                    (exceptions ??= []).AddRange(task.Exception!.InnerExceptions);
+            }
         }
 
         if (exceptions is not null)

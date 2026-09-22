@@ -15,6 +15,10 @@ Three factory methods cover the most common disposal patterns:
 `IDisposableState` extends `IDisposable` with a single `bool IsDisposed` property.  
 `IDisposableTracker` extends `IDisposableState` with `Track(IDisposable)`.
 
+### Thread safety
+
+None of the types in this library are thread-safe. `Dispose`/`DisposeAsync` are safe to call more than once from a *single* thread (idempotent — later calls are no-ops), but calling `Dispose`, `DisposeAsync`, or `Track` concurrently from multiple threads on the same instance is not supported and may corrupt internal state or trigger a resource being disposed more than once. If you need a tracker shared across threads, synchronize access to it yourself.
+
 ---
 
 ## Disposable.Create
@@ -116,13 +120,13 @@ If any tracked `Dispose()` call throws, disposal continues through the remaining
 
 ## AsyncDisposable.CreateTracker
 
-The tracker utility is also available in an async version. Here is an implementation of a very generic factory using ActivatorUtilities. If you for some reason decide to use ActivatorUtilities to create objects, then you are responsible for cleaning up your mess. This is one way to this.
+The tracker utility is also available in an async version. Here is an implementation of a very generic factory using ActivatorUtilities. If you for some reason decide to use ActivatorUtilities to create objects, then you are responsible for cleaning up your mess. This is one way to do this.
 
 ```csharp
 public sealed class GenericFactory(IServiceProvider serviceProvider) : IAsyncDisposable
 {
-    private readonly _tracker = AsyncDisposable.CreateTracker();
-    private readonly _serviceProvider = serviceProvider;
+    private readonly IAsyncDisposableTracker _tracker = AsyncDisposable.CreateTracker();
+    private readonly IServiceProvider _serviceProvider = serviceProvider;
 
     public T CreateInstance<T>(params object[] args)
     {
