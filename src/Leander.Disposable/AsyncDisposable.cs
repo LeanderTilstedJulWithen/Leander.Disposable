@@ -25,6 +25,10 @@ public static class AsyncDisposable
         return new AsyncDisposableWrapper(disposable);
     }
 
+    /// <summary>A shared async disposable that does nothing on disposal. Useful for opting out where an async disposable is required.</summary>
+    /// <remarks>Deliberately not an <see cref="IAsyncDisposableState"/>: a shared instance cannot track per-owner disposal state.</remarks>
+    public static IAsyncDisposable Empty => EmptyAsyncDisposable.Instance;
+
     /// <summary>The <see cref="DisposalOrder"/> used by <see cref="CreateTracker"/> when no order is specified explicitly.</summary>
     public static DisposalOrder DefaultDisposalOrder { get; set; } = DisposalOrder.Lifo;
 }

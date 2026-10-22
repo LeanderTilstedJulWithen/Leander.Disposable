@@ -17,3 +17,5 @@ Console.WriteLine();
 await AsyncTrackerSample.RunAsync(DisposalOrder.Parallel);
 Console.WriteLine();
 await GenericFactorySample.RunAsync();
+Console.WriteLine();
+await EmptySample.RunAsync();

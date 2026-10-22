@@ -23,4 +23,8 @@ public static class Disposable
         ArgumentNullException.ThrowIfNull(disposable);
         return new DisposableWrapper(disposable);
     }
+
+    /// <summary>A shared disposable that does nothing on disposal. Useful for opting out where a disposable is required.</summary>
+    /// <remarks>Deliberately not an <see cref="IDisposableState"/>: a shared instance cannot track per-owner disposal state.</remarks>
+    public static IDisposable Empty => EmptyDisposable.Instance;
 }

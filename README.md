@@ -59,19 +59,22 @@ public sealed class ReportScheduler : IDisposable
 
 ## Overview
 
-Six factory methods cover the common disposal patterns, in both synchronous and asynchronous flavors:
+Eight factory members cover the common disposal patterns, in both synchronous and asynchronous flavors:
 
 | Method | Returns | Use when |
 |---|---|---|
 | `Disposable.Create(action)` | `IDisposableState` | You have a cleanup callback and want a disposable handle |
 | `Disposable.Wrap(disposable)` | `IDisposableState` | You have an existing `IDisposable` and need to query its disposal state |
 | `Disposable.CreateTracker()` | `IDisposableTracker` | A scope or factory owns multiple resources and must clean them all up together |
+| `Disposable.Empty` | `IDisposable` | An API requires a disposable but there is nothing to clean up (shared no-op singleton) |
 | `AsyncDisposable.Create(action)` | `IAsyncDisposableState` | Same as `Disposable.Create`, but cleanup needs to `await` something |
 | `AsyncDisposable.Wrap(disposable)` | `IAsyncDisposableState` | Same as `Disposable.Wrap`, for an existing `IAsyncDisposable` |
 | `AsyncDisposable.CreateTracker(order?)` | `IAsyncDisposableTracker` | Same as `Disposable.CreateTracker`, with a choice of LIFO or parallel disposal order |
+| `AsyncDisposable.Empty` | `IAsyncDisposable` | Same as `Disposable.Empty`, where an `IAsyncDisposable` is required |
 
 `IDisposableState`/`IAsyncDisposableState` extend `IDisposable`/`IAsyncDisposable` with a single `bool IsDisposed` property.  
-`IDisposableTracker`/`IAsyncDisposableTracker` extend those with `Track(...)`.
+`IDisposableTracker`/`IAsyncDisposableTracker` extend those with `Track(...)`.  
+The `Empty` instances are shared, so they deliberately expose no `IsDisposed`. A shared instance can't track disposal per owner, and `ThrowIfDisposed` guards built on it would never fire.
 
 ### Idempotent disposal
 
@@ -83,4 +86,4 @@ None of the types in this library are thread-safe. Idempotency holds when `Dispo
 
 ## Samples
 
-[`samples/DisposableSample`](samples/DisposableSample) is a runnable console project demonstrating all six factory methods — including LIFO vs. parallel async disposal ordering, and a generic factory built on `ActivatorUtilities`.
+[`samples/DisposableSample`](samples/DisposableSample) is a runnable console project demonstrating all eight factory members — including LIFO vs. parallel async disposal ordering, and a generic factory built on `ActivatorUtilities`.
